@@ -20,7 +20,10 @@
 # agregar en variables de entorno
 # PYTHON_VERSION = 3.9.12
 
-# git push origin main
+# Pasando a master
+# git checkout -b master
+# git push origin master
+
 
 
 ###############################################################
