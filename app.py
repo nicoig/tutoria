@@ -5,7 +5,7 @@
 # git init
 # git add .
 # git commit -m "primer commit"
-# git remote add origin https://github.com/nicoig/tutoria.git
+# git remote add origin https://github.com/nicoig/tutor-ia.git
 # git push -u origin master
 
 # Actualizar Repo de Github
@@ -19,6 +19,12 @@
 # En Render
 # agregar en variables de entorno
 # PYTHON_VERSION = 3.9.12
+
+# Pasando a master
+# git checkout -b master
+# git push origin master
+
+
 
 ###############################################################
 

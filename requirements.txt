@@ -1,9 +1,9 @@
 langchain
-PyPDF2==3.0.1
-python-dotenv==1.0.0
+PyPDF2
+python-dotenv
 streamlit
 openai
-faiss-cpu==1.7.4
+faiss-cpu
 altair
 
 # uncomment to use huggingface llms
