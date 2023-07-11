@@ -1,5 +1,9 @@
 css = '''
 <style>
+.reportview-container {
+    max-width: 50%;
+    margin: auto;
+}
 .chat-message {
     padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem; display: flex
 }
@@ -19,16 +23,17 @@ css = '''
   object-fit: cover;
 }
 .chat-message .message {
-  width: 80%;
+  width: 50%;
   padding: 0 1.5rem;
   color: #fff;
 }
+</style>
 '''
 
 bot_template = '''
 <div class="chat-message bot">
     <div class="avatar">
-        <img src="https://i.ibb.co/cN0nmSj/Screenshot-2023-05-28-at-02-37-21.png" style="max-height: 78px; max-width: 78px; border-radius: 50%; object-fit: cover;">
+        <img src="https://static.vecteezy.com/system/resources/previews/007/225/199/original/robot-chat-bot-concept-illustration-vector.jpg" style="max-height: 78px; max-width: 78px; border-radius: 50%; object-fit: cover;">
     </div>
     <div class="message">{{MSG}}</div>
 </div>
@@ -37,7 +42,7 @@ bot_template = '''
 user_template = '''
 <div class="chat-message user">
     <div class="avatar">
-        <img src="https://i.ibb.co/rdZC7LZ/Photo-logo-1.png">
+        <img src="https://cdn-icons-png.flaticon.com/512/186/186313.png">
     </div>    
     <div class="message">{{MSG}}</div>
 </div>

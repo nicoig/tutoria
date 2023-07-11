@@ -1,29 +1,4 @@
-# Para crear el requirements.txt ejecutamos 
-# pipreqs --encoding=utf8 --force
-
-# Primera Carga a Github
-# git init
-# git add .
-# git commit -m "primer commit"
-# git remote add origin https://github.com/nicoig/carozzi-chat.git
-# git push -u origin master
-
-# Actualizar Repo de Github
-# git add .
-# git commit -m "Se actualizan las variables de entorno"
-# git push origin master
-
-# Para eliminar un repo cargado
-# git remote remove origin
-
-# En Render
-# agregar en variables de entorno
-# PYTHON_VERSION = 3.9.12
-
-###############################################################
-
-
-
+import os
 import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
@@ -71,6 +46,17 @@ def get_vectorstore(text_chunks, vectorstore_file):
             pickle.dump(vectorstore, f)
     return vectorstore
 
+# Obtener los archivos PDF y procesarlos
+file_directory = 'files'
+filepaths = [os.path.join(file_directory, file) for file in os.listdir(file_directory) if file.endswith('.pdf')]
+raw_text = get_pdf_text(filepaths)
+
+# Dividir el texto en fragmentos
+text_chunks = get_text_chunks(raw_text)
+
+# Crear el vectorstore
+vectorstore_file = 'vectorstore.pkl'
+vectorstore = get_vectorstore(text_chunks, vectorstore_file)
 
 def get_conversation_chain(vectorstore):
     llm = ChatOpenAI(model_name="gpt-3.5-turbo")
@@ -115,21 +101,13 @@ def main():
     st.write(css, unsafe_allow_html=True)
 
     if "raw_text" not in st.session_state or "text_chunks" not in st.session_state:
-        # Obtener los archivos PDF y procesarlos
-        file_directory = 'files'
-        filepaths = [os.path.join(file_directory, file) for file in os.listdir(file_directory) if file.endswith('.pdf')]
-        st.session_state.raw_text = get_pdf_text(filepaths)
-
-        # Dividir el texto en fragmentos
-        st.session_state.text_chunks = get_text_chunks(st.session_state.raw_text)
+        st.session_state.raw_text = raw_text
+        st.session_state.text_chunks = text_chunks
 
     if "vectorstore" not in st.session_state:
-        # Crear el vectorstore
-        vectorstore_file = 'vectorstore.pkl'
-        st.session_state.vectorstore = get_vectorstore(st.session_state.text_chunks, vectorstore_file)
+        st.session_state.vectorstore = vectorstore
 
     if "conversation" not in st.session_state:
-        # Crear la cadena de conversación
         st.session_state.conversation = get_conversation_chain(st.session_state.vectorstore)
 
     if "chat_history" not in st.session_state:

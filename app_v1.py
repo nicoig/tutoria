@@ -1,29 +1,4 @@
-# Para crear el requirements.txt ejecutamos 
-# pipreqs --encoding=utf8 --force
-
-# Primera Carga a Github
-# git init
-# git add .
-# git commit -m "primer commit"
-# git remote add origin https://github.com/nicoig/carozzi-chat.git
-# git push -u origin master
-
-# Actualizar Repo de Github
-# git add .
-# git commit -m "Se actualizan las variables de entorno"
-# git push origin master
-
-# Para eliminar un repo cargado
-# git remote remove origin
-
-# En Render
-# agregar en variables de entorno
-# PYTHON_VERSION = 3.9.12
-
-###############################################################
-
-
-
+import os
 import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
@@ -36,19 +11,21 @@ from langchain.chains import ConversationalRetrievalChain
 import pickle
 from htmlTemplates import css, bot_template, user_template
 from langchain.prompts.prompt import PromptTemplate
-import os
+
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 
-def get_pdf_text(filepaths):
+
+
+def get_pdf_text(pdf_docs):
     text = ""
-    for filepath in filepaths:
-        with open(filepath, "rb") as file:
-            pdf = PdfReader(file)
-            for page in pdf.pages:
-                text += page.extract_text()
+    for pdf in pdf_docs:
+        pdf_reader = PdfReader(pdf)
+        for page in pdf_reader.pages:
+            text += page.extract_text()
     return text
+
 
 def get_text_chunks(text):
     text_splitter = CharacterTextSplitter(
@@ -60,20 +37,16 @@ def get_text_chunks(text):
     chunks = text_splitter.split_text(text)
     return chunks
 
-def get_vectorstore(text_chunks, vectorstore_file):
-    if os.path.exists(vectorstore_file):
-        with open(vectorstore_file, 'rb') as f:
-            vectorstore = pickle.load(f)
-    else:
-        embeddings = OpenAIEmbeddings()
-        vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
-        with open(vectorstore_file, 'wb') as f:
-            pickle.dump(vectorstore, f)
+
+def get_vectorstore(text_chunks):
+    embeddings = OpenAIEmbeddings()
+    vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vectorstore
 
 
 def get_conversation_chain(vectorstore):
-    llm = ChatOpenAI(model_name="gpt-3.5-turbo")
+    llm = ChatOpenAI()
+
     qa_template = """
         Eres un útil asistente profesor de IA. El usuario le da un archivo cuyo contenido está representado por las siguientes piezas de contexto, utilícelas para responder la pregunta al final.
         Si no sabe la respuesta, simplemente diga que no la sabe. NO intente inventar una respuesta.
@@ -85,9 +58,10 @@ def get_conversation_chain(vectorstore):
         question: {question}
         ======
         """
-    QA_PROMPT = PromptTemplate(template=qa_template, input_variables=["context","question" ])
-    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
 
+    QA_PROMPT = PromptTemplate(template=qa_template, input_variables=["context","question" ])
+
+    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
 
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -95,7 +69,9 @@ def get_conversation_chain(vectorstore):
         memory=memory,
         combine_docs_chain_kwargs={'prompt': QA_PROMPT}
     )
+
     return conversation_chain
+
 
 def handle_userinput(user_question):
     response = st.session_state.conversation({'question': user_question})
@@ -109,39 +85,42 @@ def handle_userinput(user_question):
             st.write(bot_template.replace(
                 "{{MSG}}", message.content), unsafe_allow_html=True)
 
+
 def main():
     load_dotenv()
-    st.set_page_config(page_title="TutorIA - Chatea con tu Profe", page_icon=":books:", layout="wide")  # Añadido layout="wide" para ocultar la barra lateral
+    st.set_page_config(page_title="TutorIA - Chatea con tu Profe", page_icon=":books:")
     st.write(css, unsafe_allow_html=True)
 
-    if "raw_text" not in st.session_state or "text_chunks" not in st.session_state:
-        # Obtener los archivos PDF y procesarlos
-        file_directory = 'files'
-        filepaths = [os.path.join(file_directory, file) for file in os.listdir(file_directory) if file.endswith('.pdf')]
-        st.session_state.raw_text = get_pdf_text(filepaths)
-
-        # Dividir el texto en fragmentos
-        st.session_state.text_chunks = get_text_chunks(st.session_state.raw_text)
-
-    if "vectorstore" not in st.session_state:
-        # Crear el vectorstore
-        vectorstore_file = 'vectorstore.pkl'
-        st.session_state.vectorstore = get_vectorstore(st.session_state.text_chunks, vectorstore_file)
-
     if "conversation" not in st.session_state:
-        # Crear la cadena de conversación
-        st.session_state.conversation = get_conversation_chain(st.session_state.vectorstore)
-
+        st.session_state.conversation = None
     if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+        st.session_state.chat_history = None
 
     st.header("TutorIA - Chatea con tu Profe :books:")
     st.write("Realizar consultas de cualquier tema en tu material de estudio: Haz preguntas como si estuvieras hablando con tu profesor real. TutorIA busca en tus PDFs y proporciona respuestas claras y concisas.")
-
+    
     user_question = st.text_input("Realiza preguntas sobre la asignatura:")
-    if st.button('Enviar'):  
+    if st.button('Enviar'):  # Nuevo botón de enviar
         if user_question:
             handle_userinput(user_question)
+
+    with st.sidebar:
+        st.subheader("Tus documentos")
+        pdf_docs = st.file_uploader("Cargue sus archivos PDF aquí y haga clic en 'Procesar'", accept_multiple_files=True)
+        if st.button("Procesar"):
+            with st.spinner("Procesando"):
+                # get pdf text
+                raw_text = get_pdf_text(pdf_docs)
+
+                # get the text chunks
+                text_chunks = get_text_chunks(raw_text)
+
+                # create vector store
+                vectorstore = get_vectorstore(text_chunks)
+
+                # create conversation chain
+                st.session_state.conversation = get_conversation_chain(vectorstore)
+
 
 if __name__ == '__main__':
     main()
