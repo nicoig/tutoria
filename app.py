@@ -5,7 +5,7 @@
 # git init
 # git add .
 # git commit -m "primer commit"
-# git remote add origin https://github.com/nicoig/carozzi-chat.git
+# git remote add origin https://github.com/nicoig/tutoria.git
 # git push -u origin master
 
 # Actualizar Repo de Github
